@@ -1,0 +1,32 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Deploys the TaskFlow API. The database can be Render PostgreSQL (below),
+# or remove the `databases` block and set DATABASE_URL to a Neon/Supabase URL.
+services:
+  - type: web
+    name: taskflow-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run db:deploy && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLIENT_URL
+        sync: false # set to your Vercel URL, e.g. https://taskflow.vercel.app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskflow-db
+          property: connectionString
+
+databases:
+  - name: taskflow-db
+    plan: free
+    databaseName: taskflow
